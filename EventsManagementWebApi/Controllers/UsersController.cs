@@ -1,4 +1,5 @@
 ﻿using EventDataAccess;
+using EventsManagementWebApi.Domain.Services;
 using EventsManagementWebApi.Extentions;
 using EventsManagementWebApi.Models;
 using System;
@@ -7,6 +8,7 @@ using System.Data.Entity.Core.Objects;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Results;
 
@@ -15,72 +17,62 @@ namespace EventsManagementWebApi.Controllers
     
     public class UsersController : ApiController
     {
-        
-        
-        
+        private readonly IUserService _userService;
+
+        public UsersController(IUserService userService)
+        {
+            _userService = userService;
+            
+        }
+
+
         [HttpPost]
         [AllowAnonymous]
         [Route("api/users/register")]
-        public IHttpActionResult PostRegister(UserRegister userRegisterModel)
+        public async Task<IHttpActionResult> PostRegister(UserRegister userRegisterModel)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState.GetErrorMessages());
-
-            ObjectParameter signUpResponseMessage= new ObjectParameter("responseMessage", "" );
-            ObjectParameter signInResponseMessage = new ObjectParameter("responseMessage", "");
-            ObjectParameter signUpStatus= new ObjectParameter("Status", 0);
-            ObjectParameter signInStatus = new ObjectParameter("Status", 0);
-            ObjectParameter UserId = null;
-            using (eventMangerEntities entities = new eventMangerEntities())
+                return Content(HttpStatusCode.BadRequest, ModelState.GetErrorMessages());
+            
+            var registerResponse = await _userService.RegisterAsync(userRegisterModel.username, userRegisterModel.fullName, userRegisterModel.password);
+            if(!registerResponse.Success)
             {
-                entities.spAddUser(userRegisterModel.username, userRegisterModel.password, userRegisterModel.fullName, signUpResponseMessage, signUpStatus);
-                if(Convert.ToInt32(signUpStatus.Value) == 1)
-                {
-                     entities.spLogin(userRegisterModel.username, userRegisterModel.password, signInResponseMessage, UserId, signInStatus);
-                    if(Convert.ToInt32(signInStatus.Value) == 1) { 
-                        return Ok((int)UserId.Value); 
-                    }
-                    else
-                    {
-                        return Content(HttpStatusCode.BadRequest, signInResponseMessage.Value);
-                    }
-                    
-         
-                }
-                else
-                {
-                    return Content(HttpStatusCode.BadRequest, signUpResponseMessage.Value);
-                }
-
+                
+                return Content(HttpStatusCode.InternalServerError, registerResponse.Message);
             }
+
+
+            // login new user
+            var loginResponse = await _userService.LoginAsync(userRegisterModel.username, userRegisterModel.password);
+
+
+            if (!loginResponse.Success)
+            {
+                return Content(HttpStatusCode.InternalServerError, loginResponse.Message);
+            }
+
+            return Content(HttpStatusCode.OK, loginResponse);
+
+            
         }
 
 
         [HttpPost]
         [AllowAnonymous]
         [Route("api/users/Login")]
-        public IHttpActionResult PostLogin(UserLogin userLoginModel)
+        public async Task<IHttpActionResult> PostLogin(UserLogin userLoginModel)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState.GetErrorMessages());
-            ObjectParameter signInResponseMessage = new ObjectParameter("responseMessage", "");
-            ObjectParameter signInStatus = new ObjectParameter("Status", 0);
-            ObjectParameter UserId = new ObjectParameter("LoggedUserID", 0);
-            using (eventMangerEntities entities = new eventMangerEntities())
+                return Content(HttpStatusCode.BadRequest, ModelState.GetErrorMessages());
+
+            var loginResponse = await _userService.LoginAsync(userLoginModel.Username, userLoginModel.Password);
+
+            if (!loginResponse.Success)
             {
-                entities.spLogin(userLoginModel.Username, userLoginModel.Password, signInResponseMessage, UserId, signInStatus);
-                if (Convert.ToInt32(signInStatus.Value) == 1)
-                {
-                    return Ok(new
-                    {
-                        LoggedInUserId = UserId.Value
-                    });
-                }
-                else
-                {
-                    return Content(HttpStatusCode.BadRequest, signInResponseMessage.Value);
-                }
+                return Content(HttpStatusCode.InternalServerError, loginResponse.Message);
             }
+
+            return Content(HttpStatusCode.OK, loginResponse);
 
                
         }

@@ -190,6 +190,8 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
+    <Compile Include="Domain\Repositories\ICommonRepository.cs" />
+    <Compile Include="Domain\Repositories\IEventRepository.cs" />
     <Compile Include="Domain\Repositories\IUnitOfWork.cs" />
     <Compile Include="Domain\Repositories\IUserRepository.cs" />
     <Compile Include="Domain\Services\IUserService.cs" />
@@ -202,6 +204,7 @@
     <Compile Include="Domain\Models\UserLogin.cs" />
     <Compile Include="Domain\Models\UserRegister.cs" />
     <Compile Include="Presistance\Repositories\BaseRepository.cs" />
+    <Compile Include="Presistance\Repositories\EventRepository.cs" />
     <Compile Include="Presistance\Repositories\UnitOfWork.cs" />
     <Compile Include="Presistance\Repositories\UserRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
